@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digit Recognition Canvas</title>
+  <link rel="stylesheet" href="../static/css/canvas.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Draw a Digit</h1>
+    <p class="hint">Sketch any number from 0 to 9 below, then capture to send it to the model.</p>
+    <canvas id="stage" width="280" height="280"></canvas>
+    <div id="buttons">
+      <button id="clear" class="secondary">Clear</button>
+      <button id="capture">Capture</button>
+    </div>
+    <p class="preview-label">Model Input Preview</p>
+    <canvas id="preview" width="28" height="28"></canvas>
+  </main>
+  <script src="../static/js/draw.js"></script>
+</body>
+</html>

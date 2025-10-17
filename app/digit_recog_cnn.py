@@ -2,9 +2,9 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-class DigitRecognitionCNN(nn.Module):
+class DigitRecogCNN(nn.Module):
   def __init__(self):
-    super(DigitRecognitionCNN, self).__init__()
+    super(DigitRecogCNN, self).__init__()
     self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=3, stride=1, padding=1)
     self.dropout1 = nn.Dropout2d(0.25)
     self.conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, stride=1, padding=1)

@@ -85,6 +85,3 @@ Restart the FastAPI server so the new weights are picked up.
 
 ## Development notes
 - MNIST data under `data/` is optional at runtime but handy for notebook experiments.
-## License
-
-MIT license by default. Update this section if you adopt a different license.

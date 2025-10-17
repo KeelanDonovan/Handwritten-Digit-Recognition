@@ -1,12 +1,35 @@
+const CANVAS_BG = '#111';
+const INK_COLOR = '#fff';
+
 const stage = document.getElementById('stage');
 const ctx = stage.getContext('2d');
-ctx.lineCap = 'round';
-ctx.lineJoin = 'round';
-ctx.lineWidth = 10;
-ctx.strokeStyle = '#000';
-
 const preview = document.getElementById('preview');
 const previewCtx = preview.getContext('2d');
+const captureButton = document.getElementById('capture');
+const predictionLabel = document.getElementById('prediction');
+const defaultPredictionText = predictionLabel.textContent;
+
+ctx.lineCap = 'round';
+ctx.lineJoin = 'round';
+ctx.lineWidth = 15;
+ctx.strokeStyle = INK_COLOR;
+
+function resetStage() {
+  ctx.save();
+  ctx.fillStyle = CANVAS_BG;
+  ctx.fillRect(0, 0, stage.width, stage.height);
+  ctx.restore();
+}
+
+function clearPreview() {
+  previewCtx.save();
+  previewCtx.fillStyle = CANVAS_BG;
+  previewCtx.fillRect(0, 0, preview.width, preview.height);
+  previewCtx.restore();
+}
+
+resetStage();
+clearPreview();
 
 let drawing = false;
 
@@ -22,6 +45,10 @@ function getPos(event) {
 function startDraw(event) {
   drawing = true;
   const pos = getPos(event);
+  ctx.fillStyle = ctx.strokeStyle;
+  ctx.beginPath();
+  ctx.arc(pos.x, pos.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+  ctx.fill();
   ctx.beginPath();
   ctx.moveTo(pos.x, pos.y);
 }
@@ -48,31 +75,51 @@ stage.addEventListener('touchmove', draw, { passive: false });
 stage.addEventListener('touchend', endDraw);
 
 document.getElementById('clear').addEventListener('click', () => {
-  ctx.clearRect(0, 0, stage.width, stage.height);
-  previewCtx.clearRect(0, 0, preview.width, preview.height);
+  resetStage();
+  clearPreview();
+  predictionLabel.textContent = defaultPredictionText;
 });
 
-document.getElementById('capture').addEventListener('click', () => {
+
+captureButton.addEventListener('click', () => {
   const downscaled = document.createElement('canvas');
   downscaled.width = 28;
   downscaled.height = 28;
   const dctx = downscaled.getContext('2d');
+  dctx.fillStyle = CANVAS_BG;
+  dctx.fillRect(0, 0, 28, 28);
   dctx.drawImage(stage, 0, 0, 28, 28);
-  
-  previewCtx.clearRect(0, 0, 28, 28);
+
+  clearPreview();
   previewCtx.imageSmoothingEnabled = false;
   previewCtx.drawImage(downscaled, 0, 0, 28, 28);
 
-  const data = dctx.getImageData(0, 0, 28, 28).data;
-  const grayscale = [];
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const alpha = data[i + 3] / 255;
-    const gray = Math.round((0.299 * r + 0.587 * g + 0.114 * b) * alpha);
-    grayscale.push(gray / 255);
-  }
+  predictionLabel.textContent = 'Sending to model…';
+  captureButton.disabled = true;
+  captureButton.textContent = 'Predicting…';
 
-  console.log('Grayscale 28×28 (flattened length = 784):', grayscale);
+  downscaled.toBlob(async (blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', blob, 'digit.png');
+
+      const response = await fetch('/predict', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      const { prediction } = await response.json();
+      predictionLabel.textContent = `Model prediction: ${prediction}`;
+    } catch (error) {
+      console.error('Prediction failed', error);
+      predictionLabel.textContent = 'Prediction failed. Try again after redrawing.';
+    } finally {
+      captureButton.disabled = false;
+      captureButton.textContent = 'Capture';
+    }
+  }, 'image/png');
 });
